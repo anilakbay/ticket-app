@@ -1,140 +1,175 @@
-"use client"; // Bu bileşenin istemci tarafında çalışacağını belirtir.
+"use client"; // Next.js'in client-side rendering kullanacağını belirtiyor.
 
-import { useRouter } from "next/navigation"; // Next.js yönlendirme için useRouter hook'unu import eder.
-import React, { useState } from "react"; // React ve useState hook'unu import eder.
+import { useRouter } from "next/navigation"; // Router nesnesini alıyoruz, sayfa yönlendirmesi için.
+import React, { useState } from "react"; // React'ten useState hook'unu alıyoruz.
 
-const TicketForm = () => {
+const EditTicketForm = ({ ticket }) => {
+  const router = useRouter(); // Yönlendirme ve sayfa yenileme için kullanacağız.
+  const isEditMode = ticket._id !== "new"; // Eğer ticket'in ID'si "new" değilse düzenleme modundayız demektir.
+
+  // Formu başlatırken kullanılacak başlangıç değerleri.
+  const defaultTicketData = {
+    title: "", // Başlık
+    description: "", // Açıklama
+    priority: 1, // Öncelik seviyesi (1 - düşük)
+    progress: 0, // Tamamlama yüzdesi (başlangıçta 0)
+    status: "not started", // Durum (henüz başlanmadı)
+    category: "Hardware Problem", // Kategori
+  };
+
+  // Eğer düzenleme modundaysak mevcut ticket değerlerini kullan, değilse boş bir form başlat.
+  const [formData, setFormData] = useState(
+    isEditMode
+      ? { ...defaultTicketData, ...ticket } // Eğer düzenleme modundaysak ticket verilerini forma ekliyoruz.
+      : defaultTicketData // Yeni bir ticket oluşturulacaksa varsayılan değerler kullanılıyor.
+  );
+
+  const [loading, setLoading] = useState(false); // Form gönderilirken yükleme durumunu kontrol etmek için.
+  const [error, setError] = useState(null); // Hataları takip etmek için.
+
+  // Formdaki değişiklikleri takip eden fonksiyon.
   const handleChange = (e) => {
-    const value = e.target.value;
-    const name = e.target.name;
-
+    const { name, value } = e.target; // Değişen input elemanının adı ve değerini alıyoruz.
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value,
+      [name]: value, // Değişiklik form verilerine kaydediliyor.
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const res = await fetch('api/Tickets')
+  // Form gönderildiğinde çalışacak fonksiyon.
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Sayfanın yeniden yüklenmesini engeller.
+    setLoading(true); // Yükleme durumunu aktif hale getirir.
+    setError(null); // Önceki hataları temizler.
+
+    try {
+      // Eğer düzenleme modundaysak PUT isteği, değilse POST isteği gönderiyoruz.
+      const response = await fetch(
+        isEditMode ? `/api/Tickets/${ticket._id}` : "/api/Tickets",
+        {
+          method: isEditMode ? "PUT" : "POST", // PUT -> güncelleme, POST -> yeni oluşturma
+          headers: {
+            "Content-Type": "application/json", // JSON formatında veri gönderiyoruz.
+          },
+          body: JSON.stringify(formData), // Form verilerini JSON formatında body'e ekliyoruz.
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to process the ticket."); // Eğer cevap başarısızsa hata fırlatır.
+
+      router.refresh(); // Sayfayı yeniler, böylece güncellenmiş veriler görünür.
+      router.push("/"); // Ana sayfaya yönlendirir.
+    } catch (err) {
+      setError(err.message); // Hata varsa hata mesajını state'e kaydeder.
+    } finally {
+      setLoading(false); // İşlem bittiğinde yükleme durumunu kapatır.
+    }
   };
 
-  const startingTicketData = {
-    title: "", // Başlangıçta boş olan başlık
-    description: "", // Başlangıçta boş olan açıklama
-    priority: 1, // Varsayılan öncelik 1
-    progress: 0, // Varsayılan ilerleme durumu
-    status: "not started", // Varsayılan durum "başlamadı"
-    category: "Hardware Problem", // Varsayılan kategori
-  };
-
-  const [formData, setFormData] = useState(startingTicketData); // formData durumu başlangıç verisi ile tanımlanır.
+  // Kullanıcıya seçenek olarak sunulan kategoriler.
+  const categories = [
+    "Hardware Problem", // Donanım Problemi
+    "Software Problem", // Yazılım Problemi
+    "Application Development", // Uygulama Geliştirme
+    "Project", // Proje
+  ];
 
   return (
     <div className="flex justify-center">
-      <form
-        className="flex flex-col gap-3 w-1/2"
-        method="post"
-        onSubmit={handleSubmit}
-      >
-        <h3>Create Your Ticket</h3>
-        <label>Title</label>
+      {" "}
+      {/* Formun sayfada ortalanmasını sağlıyor. */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-1/2">
+        {" "}
+        {/* Form başlatma ve CSS stilleri */}
+        <h3>{isEditMode ? "Update Your Ticket" : "Create New Ticket"}</h3>{" "}
+        {/* Başlık, düzenleme modunda güncelleme metni, yeni modda oluşturma metni gösterilir. */}
+        {error && <p className="text-red-500">{error}</p>}{" "}
+        {/* Eğer bir hata varsa kullanıcıya kırmızı renkli hata mesajı gösterir. */}
+        {loading && <p>Loading...</p>}{" "}
+        {/* Yükleme sırasında kullanıcıya yükleniyor mesajı gösterir. */}
+        <label>Title</label> {/* Başlık etiketi */}
         <input
-          id="title"
-          name="title"
-          type="text"
-          onChange={handleChange}
-          required={true}
-          value={formData.title}
+          id="title" // Input'a benzersiz bir ID veriyoruz.
+          name="title" // State ile eşleştirmek için input'a bir isim veriyoruz.
+          type="text" // Input'un türü metin.
+          onChange={handleChange} // Her değişiklikte handleChange fonksiyonu çağrılır.
+          value={formData.title} // Input değeri state ile kontrol ediliyor.
+          required // Bu alanın doldurulması zorunlu.
         />
-        <label>Description</label>
+        <label>Description</label> {/* Açıklama etiketi */}
         <textarea
           id="description"
           name="description"
           onChange={handleChange}
-          required={true}
           value={formData.description}
-          rows="5"
+          rows="5" // Textarea'nın 5 satır yüksekliğinde olmasını sağlar.
+          required
         />
-        <label>Category</label>
+        <label>Category</label> {/* Kategori etiketi */}
         <select
           name="category"
           value={formData.category}
           onChange={handleChange}
         >
-          <option value="Hardware Problem">Hardware Problem</option>
-          <option value="Software Problem">Software Problem</option>
-          <option value="Project Problem">Project</option>
+          {categories.map((category, index) => (
+            <option key={index} value={category}>
+              {" "}
+              {/* Kategori seçeneklerini döngü ile oluşturuyoruz. */}
+              {category}{" "}
+              {/* Her bir seçenek kullanıcının seçmesi için görüntülenir. */}
+            </option>
+          ))}
         </select>
-
-        <label>Priority</label>
-        <div>
-          <input
-            id="priority-1"
-            name="priority"
-            type="radio"
-            onChange={handleChange}
-            value={1}
-            checked={formData.priority == 1}
-          />
-          <label>1</label>
-          <input
-            id="priority-2"
-            name="priority"
-            type="radio"
-            onChange={handleChange}
-            value={2}
-            checked={formData.priority == 2}
-          />
-          <label>2</label>
-          <input
-            id="priority-3"
-            name="priority"
-            type="radio"
-            onChange={handleChange}
-            value={3}
-            checked={formData.priority == 3}
-          />
-          <label>3</label>
-          <input
-            id="priority-4"
-            name="priority"
-            type="radio"
-            onChange={handleChange}
-            value={4}
-            checked={formData.priority == 4}
-          />
-          <label>4</label>
-          <input
-            id="priority-5"
-            name="priority"
-            type="radio"
-            onChange={handleChange}
-            value={5}
-            checked={formData.priority == 5}
-          />
-          <label>5</label>
+        <label>Priority</label> {/* Öncelik etiketi */}
+        <div className="flex gap-2">
+          {" "}
+          {/* Radyo butonları arasında boşluk bırakır. */}
+          {[1, 2, 3, 4, 5].map(
+            (
+              priority // 1'den 5'e kadar öncelik seçeneklerini döngü ile oluşturur.
+            ) => (
+              <label key={priority}>
+                <input
+                  id={`priority-${priority}`}
+                  name="priority"
+                  type="radio" // Radyo butonu türü, sadece bir tanesi seçilebilir.
+                  onChange={handleChange}
+                  value={priority}
+                  checked={formData.priority === priority} // Seçilen radyo butonunu kontrol eder.
+                />
+                {priority} {/* Radyo butonunun yanında sayıyı gösterir. */}
+              </label>
+            )
+          )}
         </div>
-        <label>Progress</label>
+        <label>Progress</label> {/* İlerleme etiketi */}
         <input
-          type="range"
+          type="range" // İlerleme durumu için bir kaydırma çubuğu.
           id="progress"
           name="progress"
           value={formData.progress}
-          min="0"
-          max="100"
+          min="0" // Minimum değer 0
+          max="100" // Maksimum değer 100
           onChange={handleChange}
         />
-        <label>Status</label>
+        <label>Status</label> {/* Durum etiketi */}
         <select name="status" value={formData.status} onChange={handleChange}>
-          <option value="not started">Not Started</option>
-          <option value="started">Started</option>
-          <option value="done">Done</option>
+          <option value="not started">Not Started</option>{" "}
+          {/* Başlanmadı durumu */}
+          <option value="started">Started</option> {/* Başladı durumu */}
+          <option value="done">Done</option> {/* Tamamlandı durumu */}
         </select>
-        <input type="submit" className="btn max-w-xs" value="Create Ticket" />
+        <button
+          type="submit" // Formu gönderme butonu.
+          className="btn max-w-xs" // Butonun genişlik sınırlaması.
+          disabled={loading} // Eğer yükleme yapılıyorsa buton devre dışı bırakılır.
+        >
+          {isEditMode ? "Update Ticket" : "Create Ticket"}{" "}
+          {/* Butonun üzerinde düzenleme moduna göre yazı gösterilir. */}
+        </button>
       </form>
     </div>
-  ); // Bileşen render ediliyor.
+  );
 };
 
-export default TicketForm; // Bileşen dışa aktarılıyor.
+export default EditTicketForm; // Bileşeni dışa aktarıyoruz.
