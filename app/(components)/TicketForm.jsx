@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation"; // Router nesnesini alıyoruz, sayfa yönlendirmesi için.
 import React, { useState } from "react"; // React'ten useState hook'unu alıyoruz.
 
-const EditTicketForm = ({ ticket }) => {
+const TicketForm = ({ ticket }) => {
   const router = useRouter(); // Yönlendirme ve sayfa yenileme için kullanacağız.
-  const isEditMode = ticket._id !== "new"; // Eğer ticket'in ID'si "new" değilse düzenleme modundayız demektir.
+
+  // ticket nesnesinin undefined olup olmadığını kontrol ediyoruz
+  const isEditMode = ticket && ticket._id !== "new"; // Eğer ticket tanımlıysa ve ID'si "new" değilse düzenleme modundayız.
 
   // Formu başlatırken kullanılacak başlangıç değerleri.
   const defaultTicketData = {
@@ -76,18 +78,16 @@ const EditTicketForm = ({ ticket }) => {
 
   return (
     <div className="flex justify-center">
-      {" "}
       {/* Formun sayfada ortalanmasını sağlıyor. */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-1/2">
-        {" "}
         {/* Form başlatma ve CSS stilleri */}
-        <h3>{isEditMode ? "Update Your Ticket" : "Create New Ticket"}</h3>{" "}
+        <h3>{isEditMode ? "Update Your Ticket" : "Create New Ticket"}</h3>
         {/* Başlık, düzenleme modunda güncelleme metni, yeni modda oluşturma metni gösterilir. */}
-        {error && <p className="text-red-500">{error}</p>}{" "}
+        {error && <p className="text-red-500">{error}</p>}
         {/* Eğer bir hata varsa kullanıcıya kırmızı renkli hata mesajı gösterir. */}
-        {loading && <p>Loading...</p>}{" "}
+        {loading && <p>Loading...</p>}
         {/* Yükleme sırasında kullanıcıya yükleniyor mesajı gösterir. */}
-        <label>Title</label> {/* Başlık etiketi */}
+        <label>Title</label>
         <input
           id="title" // Input'a benzersiz bir ID veriyoruz.
           name="title" // State ile eşleştirmek için input'a bir isim veriyoruz.
@@ -96,7 +96,7 @@ const EditTicketForm = ({ ticket }) => {
           value={formData.title} // Input değeri state ile kontrol ediliyor.
           required // Bu alanın doldurulması zorunlu.
         />
-        <label>Description</label> {/* Açıklama etiketi */}
+        <label>Description</label>
         <textarea
           id="description"
           name="description"
@@ -105,7 +105,7 @@ const EditTicketForm = ({ ticket }) => {
           rows="5" // Textarea'nın 5 satır yüksekliğinde olmasını sağlar.
           required
         />
-        <label>Category</label> {/* Kategori etiketi */}
+        <label>Category</label>
         <select
           name="category"
           value={formData.category}
@@ -113,36 +113,30 @@ const EditTicketForm = ({ ticket }) => {
         >
           {categories.map((category, index) => (
             <option key={index} value={category}>
-              {" "}
               {/* Kategori seçeneklerini döngü ile oluşturuyoruz. */}
-              {category}{" "}
+              {category}
               {/* Her bir seçenek kullanıcının seçmesi için görüntülenir. */}
             </option>
           ))}
         </select>
-        <label>Priority</label> {/* Öncelik etiketi */}
-        <div className="flex gap-2">
-          {" "}
+        <label>Priority</label>
+        <div className="flex gap-4">
           {/* Radyo butonları arasında boşluk bırakır. */}
-          {[1, 2, 3, 4, 5].map(
-            (
-              priority // 1'den 5'e kadar öncelik seçeneklerini döngü ile oluşturur.
-            ) => (
-              <label key={priority}>
-                <input
-                  id={`priority-${priority}`}
-                  name="priority"
-                  type="radio" // Radyo butonu türü, sadece bir tanesi seçilebilir.
-                  onChange={handleChange}
-                  value={priority}
-                  checked={formData.priority === priority} // Seçilen radyo butonunu kontrol eder.
-                />
-                {priority} {/* Radyo butonunun yanında sayıyı gösterir. */}
-              </label>
-            )
-          )}
+          {[1, 2, 3, 4, 5].map((priority) => (
+            <label key={priority}>
+              <input
+                id={`priority-${priority}`}
+                name="priority"
+                type="radio" // Radyo butonu türü, sadece bir tanesi seçilebilir.
+                onChange={handleChange}
+                value={priority}
+                checked={formData.priority === priority} // Seçilen radyo butonunu kontrol eder.
+              />
+              {priority} {/* Radyo butonunun yanında sayıyı gösterir. */}
+            </label>
+          ))}
         </div>
-        <label>Progress</label> {/* İlerleme etiketi */}
+        <label>Progress</label>
         <input
           type="range" // İlerleme durumu için bir kaydırma çubuğu.
           id="progress"
@@ -152,9 +146,9 @@ const EditTicketForm = ({ ticket }) => {
           max="100" // Maksimum değer 100
           onChange={handleChange}
         />
-        <label>Status</label> {/* Durum etiketi */}
+        <label>Status</label>
         <select name="status" value={formData.status} onChange={handleChange}>
-          <option value="not started">Not Started</option>{" "}
+          <option value="not started">Not Started</option>
           {/* Başlanmadı durumu */}
           <option value="started">Started</option> {/* Başladı durumu */}
           <option value="done">Done</option> {/* Tamamlandı durumu */}
@@ -164,7 +158,7 @@ const EditTicketForm = ({ ticket }) => {
           className="btn max-w-xs" // Butonun genişlik sınırlaması.
           disabled={loading} // Eğer yükleme yapılıyorsa buton devre dışı bırakılır.
         >
-          {isEditMode ? "Update Ticket" : "Create Ticket"}{" "}
+          {isEditMode ? "Update Ticket" : "Create Ticket"}
           {/* Butonun üzerinde düzenleme moduna göre yazı gösterilir. */}
         </button>
       </form>
@@ -172,4 +166,4 @@ const EditTicketForm = ({ ticket }) => {
   );
 };
 
-export default EditTicketForm; // Bileşeni dışa aktarıyoruz.
+export default TicketForm; // Bileşeni dışa aktarıyoruz.
