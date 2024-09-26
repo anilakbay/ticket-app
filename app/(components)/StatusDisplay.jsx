@@ -3,27 +3,16 @@ const StatusDisplay = ({ status }) => {
 
   const getColor = (status) => {
     // Status değerine göre arka plan rengini döndüren fonksiyon.
-    let color; // Renk değişkenini tanımlıyoruz.
-
-    // Status değerine göre switch-case ile renk belirleniyor.
     switch (status.toLowerCase()) {
       case "done":
-        color = "bg-green-200"; // Tamamlanmış durum için yeşil renk
-        return color; // Rengi döndür
-
+        return "bg-green-200"; // Tamamlanmış durum için yeşil renk
       case "started":
-        color = "bg-yellow-200"; // Başlanmış durum için sarı renk
-        return color; // Rengi döndür
-
+        return "bg-yellow-200"; // Başlanmış durum için sarı renk
       case "not started":
-        color = "bg-red-200"; // Başlanmamış durum için kırmızı renk
-        return color; // Rengi döndür
-
+        return "bg-red-200"; // Başlanmamış durum için kırmızı renk
       default:
-        color = "bg-slate-700"; // Tanımsız durumlar için gri renk
+        return "bg-slate-700"; // Tanımsız durumlar için gri renk
     }
-
-    return color; // Rengi döndür
   };
 
   return (
